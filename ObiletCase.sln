@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.14.36221.1 d17.14
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ObiletCase", "ObiletCase.csproj", "{AEF1EFEF-4D5F-4FC3-A799-1EC90C4EBBDC}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{AEF1EFEF-4D5F-4FC3-A799-1EC90C4EBBDC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AEF1EFEF-4D5F-4FC3-A799-1EC90C4EBBDC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AEF1EFEF-4D5F-4FC3-A799-1EC90C4EBBDC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AEF1EFEF-4D5F-4FC3-A799-1EC90C4EBBDC}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {D743D92B-F49C-4548-8079-B34EF1CCE2D6}
+	EndGlobalSection
+EndGlobal
