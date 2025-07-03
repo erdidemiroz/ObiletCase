@@ -1,4 +1,5 @@
 using ObiletCase.Services;
+using System.Net.Http;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -10,7 +11,7 @@ builder.Services.AddHttpClient("ObiletClient", client =>
     client.BaseAddress = new Uri("https://v2-api.obilet.com/api");
 });
 
-builder.Services.AddScoped<ObiletApiService>();
+builder.Services.AddHttpClient<IObiletApiService, ObiletApiService>();
 
 var app = builder.Build();
 

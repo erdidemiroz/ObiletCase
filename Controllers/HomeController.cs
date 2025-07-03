@@ -1,32 +1,56 @@
-using System.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
-using ObiletCase.Models;
+using ObiletCase.Models.Location;
+using ObiletCase.Services;
+using ObiletCase.ViewModels.Home;
 
 namespace ObiletCase.Controllers
 {
     public class HomeController : Controller
     {
-        private readonly ILogger<HomeController> _logger;
+        private readonly IObiletApiService _obiletService;
 
-        public HomeController(ILogger<HomeController> logger)
+        public HomeController(IObiletApiService obiletService)
         {
-            _logger = logger;
+            _obiletService = obiletService;
         }
 
-        public IActionResult Index()
+        public async Task<IActionResult> Index()
         {
-            return View();
-        }
+            // Check if session exists in TempData, if not create new one
+            var sessionId = TempData["session_id"] as string;
+            var deviceId = TempData["device_id"] as string;
 
-        public IActionResult Privacy()
-        {
-            return View();
-        }
+            if (string.IsNullOrEmpty(sessionId))
+            {
+                var response = await _obiletService.GetSessionAsync();
+                sessionId = response.SessionId;
+                deviceId = response.DeviceId;
 
-        [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
-        public IActionResult Error()
-        {
-            return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
+                // Store sessionId, deviceId in TempData to persist across requests
+                TempData["session_id"] = sessionId;
+                TempData["device_id"] = deviceId;
+            }
+
+            var request = new GetBusLocationRequest
+            {
+                Data = null,
+                DeviceSession = new DeviceSession
+                {
+                    SessionId = sessionId,
+                    DeviceId = deviceId
+                },
+                Date = DateTime.UtcNow
+            };
+
+            var locations = await _obiletService.GetBusLocationsAsync(request);
+            var viewModel = new IndexViewModel
+            {
+                SessionId = sessionId,
+                AllLocations = locations,
+                DepartureDate = DateTime.Today.AddDays(1) // default: tomorrow
+            };
+
+            return View(viewModel);
         }
     }
 }
