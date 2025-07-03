@@ -1,32 +1,263 @@
 ﻿@model ObiletCase.ViewModels.Home.IndexViewModel
 
 @{
-    ViewData["Title"] = "Home";
+    ViewData["Title"] = "Search Journeys";
+    var today = DateTime.Today.ToString("yyyy-MM-dd");
+    var tomorrow = DateTime.Today.AddDays(1).ToString("yyyy-MM-dd");
+    Layout = null;
 }
 
-<h2>Select Your Journey</h2>
-
-<form asp-controller="Journey" asp-action="Index" method="get">
-    <input type="hidden" name="sessionId" value="@Model.SessionId" />
-
-    <label>Origin:</label>
-    <select name="originId" required>
-        @foreach (var loc in Model.AllLocations)
-        {
-            <option value="@loc.Id">@loc.Name</option>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <title>@ViewData["Title"]</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <style>
+        body {
+            background-color: #f7f7f7;
+            color: #222;
+            font-family: 'Segoe UI', sans-serif;
+            margin: 0;
+            padding: 0;
         }
-    </select>
 
-    <label>Destination:</label>
-    <select name="destinationId" required>
-        @foreach (var loc in Model.AllLocations)
-        {
-            <option value="@loc.Id">@loc.Name</option>
+        .search-container {
+            max-width: 420px;
+            margin: 60px auto;
+            padding: 24px;
+            background-color: #fff;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
         }
-    </select>
 
-    <label>Departure Date:</label>
-    <input type="date" name="departureDate" value="@Model.DepartureDate.ToString("yyyy-MM-dd")" required />
+        .input-group {
+            margin-bottom: 20px;
+        }
 
-    <button type="submit">Search</button>
-</form>
+            .input-group label {
+                display: block;
+                font-weight: 600;
+                margin-bottom: 6px;
+                color: #222;
+            }
+
+        .input-with-icon {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            position: relative;
+        }
+
+            .input-with-icon .icon {
+                font-size: 18px;
+            }
+
+            .input-with-icon input {
+                flex: 1;
+                padding: 8px 10px;
+                border: 1px solid #ccc;
+                border-radius: 6px;
+                font-size: 14px;
+                background-color: #fff;
+                color: #222;
+                outline: none;
+            }
+
+        .swap-btn {
+            background: none;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+            color: #666;
+        }
+
+        .quick-buttons {
+            margin-top: 8px;
+        }
+
+            .quick-buttons button {
+                margin-right: 8px;
+                padding: 6px 14px;
+                border: 1px solid #999;
+                background-color: #eaeaea;
+                color: #222;
+                border-radius: 4px;
+                cursor: pointer;
+            }
+
+        .primary-button {
+            width: 100%;
+            padding: 12px;
+            background-color: #e63946;
+            color: white;
+            border: none;
+            font-weight: bold;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        .autocomplete-list {
+            border: 1px solid #ccc;
+            background-color: #fff;
+            max-height: 150px;
+            overflow-y: auto;
+            list-style: none;
+            margin: 0;
+            padding: 0;
+            position: absolute;
+            width: 100%;
+            z-index: 1000;
+        }
+
+            .autocomplete-list li {
+                padding: 6px;
+                cursor: pointer;
+                color: #222;
+            }
+
+                .autocomplete-list li:hover {
+                    background-color: #f1f1f1;
+                }
+
+        .validation-errors {
+            color: #d9534f;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="search-container">
+        <form asp-controller="Home" asp-action="Index" method="post" id="journeyForm">
+            <input type="hidden" name="SessionId" value="@Model.SessionId" />
+            <input type="hidden" name="OriginId" id="originId" value="@Model.OriginId" />
+            <input type="hidden" name="DestinationId" id="destinationId" value="@Model.DestinationId" />
+
+            @if (!ViewData.ModelState.IsValid)
+            {
+                <div class="validation-errors">
+                    @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+                    {
+                        <p>@error.ErrorMessage</p>
+                    }
+                </div>
+            }
+
+            <div class="input-group">
+                <label for="originSearch">From</label>
+                <div class="input-with-icon">
+                    <span class="icon">📍</span>
+                    <input type="text" id="originSearch" placeholder="Type origin..." autocomplete="off" />
+                </div>
+                <ul id="originResults" class="autocomplete-list"></ul>
+            </div>
+
+            <div class="input-group">
+                <label for="destinationSearch">To</label>
+                <div class="input-with-icon">
+                    <span class="icon">📍</span>
+                    <input type="text" id="destinationSearch" placeholder="Type destination..." autocomplete="off" />
+                    <button type="button" id="swapButton" class="swap-btn">↔</button>
+                </div>
+                <ul id="destinationResults" class="autocomplete-list"></ul>
+            </div>
+
+            <div class="input-group">
+                <label for="departureDate">Departure Date</label>
+                <div class="input-with-icon">
+                    <span class="icon">📅</span>
+                    <input type="date" name="DepartureDate" id="departureDate"
+                           value="@Model.DepartureDate.ToString("yyyy-MM-dd")"
+                           min="@today" />
+                </div>
+                <div class="quick-buttons">
+                    <button type="button" onclick="setDate('@today')">Today</button>
+                    <button type="button" onclick="setDate('@tomorrow')">Tomorrow</button>
+                </div>
+            </div>
+
+            <button type="submit" class="primary-button">Search Ticket</button>
+        </form>
+    </div>
+
+    <script>
+        function setupAutocomplete(inputId, resultsId, hiddenId) {
+            const input = document.getElementById(inputId);
+            const resultsList = document.getElementById(resultsId);
+            const hiddenInput = document.getElementById(hiddenId);
+
+            input.addEventListener("input", async function () {
+                const keyword = input.value.trim();
+                if (keyword.length < 2) {
+                    resultsList.innerHTML = "";
+                    return;
+                }
+
+                const response = await fetch(`/Home/SearchLocations?keyword=${encodeURIComponent(keyword)}`);
+                const locations = await response.json();
+
+                resultsList.innerHTML = "";
+                locations.forEach(loc => {
+                    const li = document.createElement("li");
+                    li.textContent = loc.name;
+                    li.addEventListener("click", () => {
+                        input.value = loc.name;
+                        hiddenInput.value = loc.id;
+                        resultsList.innerHTML = "";
+                    });
+                    resultsList.appendChild(li);
+                });
+            });
+        }
+
+        setupAutocomplete("originSearch", "originResults", "originId");
+        setupAutocomplete("destinationSearch", "destinationResults", "destinationId");
+
+        function setDate(dateString) {
+            document.getElementById("departureDate").value = dateString;
+        }
+
+        document.getElementById("swapButton").addEventListener("click", function () {
+            const originInput = document.getElementById("originSearch");
+            const destinationInput = document.getElementById("destinationSearch");
+            const originId = document.getElementById("originId");
+            const destinationId = document.getElementById("destinationId");
+
+            const tempText = originInput.value;
+            const tempId = originId.value;
+
+            originInput.value = destinationInput.value;
+            originId.value = destinationId.value;
+
+            destinationInput.value = tempText;
+            destinationId.value = tempId;
+        });
+
+        document.getElementById("journeyForm").addEventListener("submit", function (e) {
+            const origin = document.getElementById("originId").value;
+            const destination = document.getElementById("destinationId").value;
+            const date = new Date(document.getElementById("departureDate").value);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            if (!origin || !destination) {
+                alert("Please select both origin and destination from suggestions.");
+                e.preventDefault();
+                return;
+            }
+
+            if (origin === destination) {
+                alert("Origin and destination cannot be the same.");
+                e.preventDefault();
+                return;
+            }
+
+            if (date < today) {
+                alert("Departure date cannot be in the past.");
+                e.preventDefault();
+            }
+        });
+    </script>
+</body>
+</html>
