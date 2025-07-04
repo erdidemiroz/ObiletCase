@@ -2,7 +2,6 @@ using Microsoft.AspNetCore.Mvc;
 using ObiletCase.Models.Location;
 using ObiletCase.Services;
 using ObiletCase.ViewModels.Home;
-using ObiletCase.ViewModels.Journey;
 
 namespace ObiletCase.Controllers
 {
@@ -18,21 +17,34 @@ namespace ObiletCase.Controllers
         [HttpGet]
         public async Task<IActionResult> Index()
         {
-            // Check for session and device ID in TempData
-            var sessionId = TempData["session_id"] as string;
-            var deviceId = TempData["device_id"] as string;
+            // Retrieve session and device ID from browser cookies
+            string sessionId = Request.Cookies["session_id"];
+            string deviceId = Request.Cookies["device_id"];
 
+            // If cookie not available, call GetSession API and store values in cookies
             if (string.IsNullOrEmpty(sessionId) || string.IsNullOrEmpty(deviceId))
             {
-                // Create a new session if not present
                 var response = await _obiletService.GetSessionAsync();
                 sessionId = response.SessionId;
                 deviceId = response.DeviceId;
 
-                TempData["session_id"] = sessionId;
-                TempData["device_id"] = deviceId;
+                // Save values in browser cookies for subsequent requests
+                Response.Cookies.Append("session_id", sessionId, new CookieOptions
+                {
+                    HttpOnly = true,
+                    Secure = true,
+                    Expires = DateTimeOffset.UtcNow.AddDays(7)
+                });
+
+                Response.Cookies.Append("device_id", deviceId, new CookieOptions
+                {
+                    HttpOnly = true,
+                    Secure = true,
+                    Expires = DateTimeOffset.UtcNow.AddDays(7)
+                });
             }
 
+            // Prepare the default view model for the search screen
             var viewModel = new IndexViewModel
             {
                 SessionId = sessionId,
@@ -40,25 +52,19 @@ namespace ObiletCase.Controllers
                 DepartureDate = DateTime.Today.AddDays(1) // default: tomorrow
             };
 
-            TempData.Keep(); // preserve TempData across requests
             return View(viewModel);
         }
 
         [HttpPost]
         public async Task<IActionResult> Index(IndexViewModel model)
         {
-            var sessionId = TempData["session_id"] as string;
-            var deviceId = TempData["device_id"] as string;
+            // Retrieve session/device ID from cookies again for safety
+            string sessionId = Request.Cookies["session_id"];
+            string deviceId = Request.Cookies["device_id"];
 
-            if (string.IsNullOrEmpty(sessionId) || string.IsNullOrEmpty(deviceId))
-            {
-                var response = await _obiletService.GetSessionAsync();
-                sessionId = response.SessionId;
-                deviceId = response.DeviceId;
-
-                TempData["session_id"] = sessionId;
-                TempData["device_id"] = deviceId;
-            }
+            // Pass session and device IDs to view model
+            model.SessionId = sessionId;
+            model.DeviceId = deviceId;
 
             // Add Origin and Destination Name to TempData
             TempData["origin_name"] = model.OriginName ?? "";
@@ -82,34 +88,51 @@ namespace ObiletCase.Controllers
                 return View(model);
             }
 
-            return RedirectToAction("Index", "Journey", new JourneyRequestViewModel
+            // Redirect to JourneyController with validated query parameters
+            return RedirectToAction("Index", "Journey", new
             {
-                OriginId = model.OriginId.Value,
-                DestinationId = model.DestinationId.Value,
-                DepartureDate = model.DepartureDate,
-                SessionId = sessionId,
-                DeviceId = deviceId
+                originId = model.OriginId,
+                destinationId = model.DestinationId,
+                departureDate = model.DepartureDate.ToString("yyyy-MM-dd"),
+                sessionId = model.SessionId,
+                deviceId = model.DeviceId,
+                originName = model.OriginName,
+                destinationName = model.DestinationName
             });
         }
-
 
         [HttpGet]
         public async Task<IActionResult> SearchLocations(string keyword)
         {
+            // Minimum keyword length for search
             if (string.IsNullOrWhiteSpace(keyword) || keyword.Length < 2)
                 return Json(new List<object>());
 
-            var sessionId = TempData["session_id"] as string;
-            var deviceId = TempData["device_id"] as string;
+            // Retrieve session/device ID from cookies again
+            string sessionId = Request.Cookies["session_id"];
+            string deviceId = Request.Cookies["device_id"];
 
+
+            // If session/device ID not available, create new session and update cookies
             if (string.IsNullOrEmpty(sessionId) || string.IsNullOrEmpty(deviceId))
             {
                 var response = await _obiletService.GetSessionAsync();
                 sessionId = response.SessionId;
                 deviceId = response.DeviceId;
 
-                TempData["session_id"] = sessionId;
-                TempData["device_id"] = deviceId;
+                Response.Cookies.Append("session_id", sessionId, new CookieOptions
+                {
+                    HttpOnly = true,
+                    Secure = true,
+                    Expires = DateTimeOffset.UtcNow.AddDays(7)
+                });
+
+                Response.Cookies.Append("device_id", deviceId, new CookieOptions
+                {
+                    HttpOnly = true,
+                    Secure = true,
+                    Expires = DateTimeOffset.UtcNow.AddDays(7)
+                });
             }
 
             var request = new GetBusLocationRequest

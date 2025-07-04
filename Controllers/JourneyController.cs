@@ -4,9 +4,6 @@ using ObiletCase.Models.Location;
 using ObiletCase.Services;
 using ObiletCase.ViewModels.Home;
 using ObiletCase.ViewModels.Journey;
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 
 namespace ObiletCase.Controllers
 {
@@ -20,16 +17,20 @@ namespace ObiletCase.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> Index(int originId, int destinationId, DateTime departureDate, string sessionId, string deviceId)
+        public async Task<IActionResult> Index(int originId, int destinationId, DateTime departureDate, string originName, string destinationName)
         {
-            // Basic validations
+            // Retrieve session and device ID from browser cookies
+            string sessionId = Request.Cookies["session_id"];
+            string deviceId = Request.Cookies["device_id"];
+
+            // Basic server-side validations to prevent invalid input
             if (originId == destinationId)
                 ModelState.AddModelError("", "Origin and destination cannot be the same.");
 
             if (departureDate < DateTime.Today)
                 ModelState.AddModelError("", "Departure date cannot be in the past.");
 
-            // Return to Home/Index view if validation fails
+            // Return user to search screen if validation fails
             if (!ModelState.IsValid)
             {
                 var fallbackModel = new IndexViewModel
@@ -39,15 +40,13 @@ namespace ObiletCase.Controllers
                     OriginId = originId,
                     DestinationId = destinationId,
                     DepartureDate = departureDate,
-                    AllLocations = TempData["locations"] as List<LocationModel> ?? new List<LocationModel>()
+                    OriginName = originName,
+                    DestinationName = destinationName
                 };
-
-                TempData.Keep("locations");
-
                 return View("~/Views/Home/Index.cshtml", fallbackModel);
             }
 
-            // Build request model
+            // Construct journey search request using provided values
             var searchRequest = new JourneySearchRequest
             {
                 Data = new Data
@@ -64,14 +63,10 @@ namespace ObiletCase.Controllers
                 }
             };
 
-            // Call the service
+            // Query the available journeys from the API
             var journeys = await _obiletService.GetJourneysAsync(searchRequest);
 
-            // Get names from TempData
-            var originName = TempData["origin_name"]?.ToString() ?? "";
-            var destinationName = TempData["destination_name"]?.ToString() ?? "";
-
-            // Create view model
+            // Prepare final view model with journey results and details
             var viewModel = new JourneyIndexViewModel
             {
                 Journeys = journeys,
@@ -80,7 +75,6 @@ namespace ObiletCase.Controllers
                 DepartureDate = departureDate
             };
 
-            // Return JourneyIndex view
             return View("JourneyIndex", viewModel);
         }
     }
