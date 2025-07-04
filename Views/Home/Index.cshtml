@@ -14,6 +14,7 @@
     <title>@ViewData["Title"]</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <style>
+        /* Styling for main body */
         body {
             background-color: #f7f7f7;
             color: #222;
@@ -22,6 +23,7 @@
             padding: 0;
         }
 
+        /* Styling for search form container */
         .search-container {
             max-width: 420px;
             margin: 60px auto;
@@ -129,7 +131,9 @@
 </head>
 <body>
     <div class="search-container">
+        <!-- Search form -->
         <form asp-controller="Home" asp-action="Index" method="post" id="journeyForm">
+            <!-- Hidden inputs to preserve selected values -->
             <input type="hidden" name="SessionId" value="@Model.SessionId" />
             <input type="hidden" name="DeviceId" value="@Model.DeviceId" />
             <input type="hidden" name="OriginId" id="originId" value="@Model.OriginId" />
@@ -137,6 +141,7 @@
             <input type="hidden" name="OriginName" id="originName" />
             <input type="hidden" name="DestinationName" id="destinationName" />
 
+            <!-- Server-side validation errors -->
             @if (!ViewData.ModelState.IsValid)
             {
                 <div class="validation-errors">
@@ -147,6 +152,7 @@
                 </div>
             }
 
+            <!-- Origin input -->
             <div class="input-group">
                 <label for="originSearch">From</label>
                 <div class="input-with-icon">
@@ -156,6 +162,7 @@
                 <ul id="originResults" class="autocomplete-list"></ul>
             </div>
 
+            <!-- Destination input -->
             <div class="input-group">
                 <label for="destinationSearch">To</label>
                 <div class="input-with-icon">
@@ -166,6 +173,7 @@
                 <ul id="destinationResults" class="autocomplete-list"></ul>
             </div>
 
+            <!-- Departure date selector -->
             <div class="input-group">
                 <label for="departureDate">Departure Date</label>
                 <div class="input-with-icon">
@@ -180,11 +188,13 @@
                 </div>
             </div>
 
+            <!-- Submit button -->
             <button type="submit" class="primary-button">Search Ticket</button>
         </form>
     </div>
 
     <script>
+        // Autocomplete location input and save selected values
         function setupAutocomplete(inputId, resultsId, hiddenId, nameHiddenId) {
             const input = document.getElementById(inputId);
             const resultsList = document.getElementById(resultsId);
@@ -210,6 +220,15 @@
                         hiddenInput.value = loc.id;
                         nameInput.value = loc.name;
                         resultsList.innerHTML = "";
+
+                        // Save selected location to localStorage
+                        if (inputId === "originSearch") {
+                            localStorage.setItem("lastOriginId", loc.id);
+                            localStorage.setItem("lastOriginName", loc.name);
+                        } else {
+                            localStorage.setItem("lastDestinationId", loc.id);
+                            localStorage.setItem("lastDestinationName", loc.name);
+                        }
                     });
                     resultsList.appendChild(li);
                 });
@@ -219,10 +238,13 @@
         setupAutocomplete("originSearch", "originResults", "originId", "originName");
         setupAutocomplete("destinationSearch", "destinationResults", "destinationId", "destinationName");
 
+        // Set selected date and save to localStorage
         function setDate(dateString) {
             document.getElementById("departureDate").value = dateString;
+            localStorage.setItem("lastDepartureDate", dateString);
         }
 
+        // Swap origin and destination values
         document.getElementById("swapButton").addEventListener("click", function () {
             const originInput = document.getElementById("originSearch");
             const destinationInput = document.getElementById("destinationSearch");
@@ -244,6 +266,32 @@
             destinationName.value = tempName;
         });
 
+        // Restore last used values from localStorage
+        window.addEventListener("DOMContentLoaded", function () {
+            const lastOriginId = localStorage.getItem("lastOriginId");
+            const lastOriginName = localStorage.getItem("lastOriginName");
+            const lastDestinationId = localStorage.getItem("lastDestinationId");
+            const lastDestinationName = localStorage.getItem("lastDestinationName");
+            const lastDepartureDate = localStorage.getItem("lastDepartureDate");
+
+            if (lastOriginId) {
+                document.getElementById("originId").value = lastOriginId;
+                document.getElementById("originName").value = lastOriginName;
+                document.getElementById("originSearch").value = lastOriginName;
+            }
+
+            if (lastDestinationId) {
+                document.getElementById("destinationId").value = lastDestinationId;
+                document.getElementById("destinationName").value = lastDestinationName;
+                document.getElementById("destinationSearch").value = lastDestinationName;
+            }
+
+            if (lastDepartureDate) {
+                document.getElementById("departureDate").value = lastDepartureDate;
+            }
+        });
+
+        // Client-side validation before form submission
         document.getElementById("journeyForm").addEventListener("submit", function (e) {
             const origin = document.getElementById("originId").value;
             const destination = document.getElementById("destinationId").value;
