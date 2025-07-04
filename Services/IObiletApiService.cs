@@ -8,6 +8,6 @@ namespace ObiletCase.Services
     {
         Task<SessionData> GetSessionAsync();
         Task<List<LocationModel>> GetBusLocationsAsync(GetBusLocationRequest request);
-        Task<List<JourneyModel>> GetJourneysAsync(JourneySearchRequest request, string sessionId);
+        Task<List<JourneyModel>> GetJourneysAsync(JourneySearchRequest request);
     }
 }

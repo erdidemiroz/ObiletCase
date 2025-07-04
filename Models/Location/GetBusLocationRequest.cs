@@ -11,13 +11,4 @@ namespace ObiletCase.Models.Location
         [JsonPropertyName("device-session")]
         public DeviceSession DeviceSession { get; set; }
     }
-
-    public class DeviceSession
-    {
-        [JsonPropertyName("session-id")]
-        public string SessionId { get; set; }
-
-        [JsonPropertyName("device-id")]
-        public string DeviceId { get; set; }
-    }
 }

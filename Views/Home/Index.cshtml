@@ -131,8 +131,11 @@
     <div class="search-container">
         <form asp-controller="Home" asp-action="Index" method="post" id="journeyForm">
             <input type="hidden" name="SessionId" value="@Model.SessionId" />
+            <input type="hidden" name="DeviceId" value="@Model.DeviceId" />
             <input type="hidden" name="OriginId" id="originId" value="@Model.OriginId" />
             <input type="hidden" name="DestinationId" id="destinationId" value="@Model.DestinationId" />
+            <input type="hidden" name="OriginName" id="originName" />
+            <input type="hidden" name="DestinationName" id="destinationName" />
 
             @if (!ViewData.ModelState.IsValid)
             {
@@ -168,7 +171,7 @@
                 <div class="input-with-icon">
                     <span class="icon">📅</span>
                     <input type="date" name="DepartureDate" id="departureDate"
-                           value="@Model.DepartureDate.ToString("yyyy-MM-dd")"
+                           value="@Model.DepartureDate:yyyy-MM-dd"
                            min="@today" />
                 </div>
                 <div class="quick-buttons">
@@ -182,10 +185,11 @@
     </div>
 
     <script>
-        function setupAutocomplete(inputId, resultsId, hiddenId) {
+        function setupAutocomplete(inputId, resultsId, hiddenId, nameHiddenId) {
             const input = document.getElementById(inputId);
             const resultsList = document.getElementById(resultsId);
             const hiddenInput = document.getElementById(hiddenId);
+            const nameInput = document.getElementById(nameHiddenId);
 
             input.addEventListener("input", async function () {
                 const keyword = input.value.trim();
@@ -204,6 +208,7 @@
                     li.addEventListener("click", () => {
                         input.value = loc.name;
                         hiddenInput.value = loc.id;
+                        nameInput.value = loc.name;
                         resultsList.innerHTML = "";
                     });
                     resultsList.appendChild(li);
@@ -211,8 +216,8 @@
             });
         }
 
-        setupAutocomplete("originSearch", "originResults", "originId");
-        setupAutocomplete("destinationSearch", "destinationResults", "destinationId");
+        setupAutocomplete("originSearch", "originResults", "originId", "originName");
+        setupAutocomplete("destinationSearch", "destinationResults", "destinationId", "destinationName");
 
         function setDate(dateString) {
             document.getElementById("departureDate").value = dateString;
@@ -223,15 +228,20 @@
             const destinationInput = document.getElementById("destinationSearch");
             const originId = document.getElementById("originId");
             const destinationId = document.getElementById("destinationId");
+            const originName = document.getElementById("originName");
+            const destinationName = document.getElementById("destinationName");
 
             const tempText = originInput.value;
             const tempId = originId.value;
+            const tempName = originName.value;
 
             originInput.value = destinationInput.value;
             originId.value = destinationId.value;
+            originName.value = destinationName.value;
 
             destinationInput.value = tempText;
             destinationId.value = tempId;
+            destinationName.value = tempName;
         });
 
         document.getElementById("journeyForm").addEventListener("submit", function (e) {

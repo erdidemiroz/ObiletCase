@@ -46,7 +46,7 @@ namespace ObiletCase.Services
         // Fetch bus locations optionally filtered by keyword
         public async Task<List<LocationModel>> GetBusLocationsAsync(GetBusLocationRequest request)
         {
-            var response = await _httpClient.PostAsJsonAsync("location/getbuslocations", request);
+           var response = await _httpClient.PostAsJsonAsync("location/getbuslocations", request);
 
             if (!response.IsSuccessStatusCode)
                 throw new Exception("Failed to fetch locations");
@@ -56,33 +56,18 @@ namespace ObiletCase.Services
             return result?.Data ?? new List<LocationModel>();
         }
 
-        public async Task<List<JourneyModel>> GetJourneysAsync(JourneySearchRequest request, string sessionId)
+        public async Task<List<JourneyModel>> GetJourneysAsync(JourneySearchRequest request)
         {
-            //var requestBody = new
-            //{
-            //    data = new
-            //    {
-            //        origin_id = request.OriginId,
-            //        destination_id = request.DestinationId,
-            //        departure_date = request.DepartureDate
-            //    },
-            //    device_session = new
-            //    {
-            //        session_id = sessionId,
-            //        device_id = "test-device-id"
-            //    },
-            //    date = DateTime.UtcNow
-            //};
+            var response = await _httpClient.PostAsJsonAsync("journey/getbusjourneys", request);
 
-            //var response = await _httpClient.PostAsJsonAsync("journey/getbusjourneys", requestBody);
+            if (!response.IsSuccessStatusCode)
+                throw new Exception("Failed to fetch journeys");
 
-            //if (!response.IsSuccessStatusCode)
-            //    throw new Exception("Failed to fetch journeys");
+            var result = await response.Content.ReadFromJsonAsync<BaseResponse<List<JourneyModel>>>();
 
-            //var result = await response.Content.ReadFromJsonAsync<BaseResponse<List<JourneyModel>>>();
-
-            //return result?.Data.OrderBy(j => j.Departure).ToList() ?? new();
-            return new List<JourneyModel>();
+            return result?.Data
+                .OrderBy(j => j.Journey?.Departure ?? DateTime.MaxValue)
+                .ToList() ?? new List<JourneyModel>();
         }
     }
 }

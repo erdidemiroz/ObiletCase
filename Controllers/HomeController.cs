@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using ObiletCase.Models.Location;
 using ObiletCase.Services;
 using ObiletCase.ViewModels.Home;
+using ObiletCase.ViewModels.Journey;
 
 namespace ObiletCase.Controllers
 {
@@ -35,6 +36,7 @@ namespace ObiletCase.Controllers
             var viewModel = new IndexViewModel
             {
                 SessionId = sessionId,
+                DeviceId = deviceId,
                 DepartureDate = DateTime.Today.AddDays(1) // default: tomorrow
             };
 
@@ -45,7 +47,6 @@ namespace ObiletCase.Controllers
         [HttpPost]
         public async Task<IActionResult> Index(IndexViewModel model)
         {
-            // Get or refresh session info
             var sessionId = TempData["session_id"] as string;
             var deviceId = TempData["device_id"] as string;
 
@@ -59,7 +60,10 @@ namespace ObiletCase.Controllers
                 TempData["device_id"] = deviceId;
             }
 
-            
+            // Add Origin and Destination Name to TempData
+            TempData["origin_name"] = model.OriginName ?? "";
+            TempData["destination_name"] = model.DestinationName ?? "";
+
             //  Normally, it is more convenient and correct to manage validations with a library such as FluentValidation in the service layer,
             //  but since I am making a simple example case, I am doing quick validation checks on the controller.
             if (model.OriginId == model.DestinationId)
@@ -78,15 +82,16 @@ namespace ObiletCase.Controllers
                 return View(model);
             }
 
-            // Redirect to Journey page with valid data
-            return RedirectToAction("Index", "Journey", new
+            return RedirectToAction("Index", "Journey", new JourneyRequestViewModel
             {
-                originId = model.OriginId,
-                destinationId = model.DestinationId,
-                departureDate = model.DepartureDate.ToString("yyyy-MM-dd"),
-                sessionId = sessionId
+                OriginId = model.OriginId.Value,
+                DestinationId = model.DestinationId.Value,
+                DepartureDate = model.DepartureDate,
+                SessionId = sessionId,
+                DeviceId = deviceId
             });
         }
+
 
         [HttpGet]
         public async Task<IActionResult> SearchLocations(string keyword)

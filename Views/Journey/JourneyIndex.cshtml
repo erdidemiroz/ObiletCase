@@ -1,8 +1,128 @@
-﻿@{
-    ViewData["Title"] = "Journey Page";
+﻿@model ObiletCase.ViewModels.Journey.JourneyIndexViewModel
+
+@{
+    Layout = null;
+    var formattedDate = Model.DepartureDate.ToString("dd MMMM yyyy");
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
-</div>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <title>Available Journeys</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <style>
+        body {
+            background-color: #f7f7f7;
+            font-family: 'Segoe UI', sans-serif;
+            margin: 0;
+            padding: 0;
+            color: #222;
+        }
+
+        .container {
+            max-width: 420px;
+            margin: 40px auto;
+            padding: 0 16px;
+        }
+
+        .header {
+            font-size: 18px;
+            font-weight: 600;
+            text-align: center;
+            margin-bottom: 16px;
+        }
+
+        .journey-card {
+            background-color: #fff;
+            border-radius: 8px;
+            padding: 12px 16px;
+            margin-bottom: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            border-left: 5px solid #e63946;
+        }
+
+        .journey-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .time-info {
+            display: flex;
+            align-items: center;
+            font-size: 15px;
+            font-weight: bold;
+            color: #2d67f2;
+        }
+
+            .time-info span {
+                font-size: 10px;
+                color: #999;
+                text-transform: uppercase;
+                margin-right: 4px;
+            }
+
+        .arrow {
+            margin: 0 8px;
+            font-weight: normal;
+            color: #333;
+        }
+
+        .price-tag {
+            background-color: #e63946;
+            color: white;
+            font-weight: bold;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 14px;
+            white-space: nowrap;
+        }
+
+        .location {
+            font-size: 13px;
+            color: #555;
+            margin-top: 6px;
+        }
+
+        .bus-company {
+            font-size: 12px;
+            margin-top: 2px;
+            color: #999;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            Available journeys from @Model.Origin to @Model.Destination on @formattedDate
+        </div>
+
+        @foreach (var journey in Model.Journeys)
+        {
+            var departure = journey.Journey.Departure.ToString("HH:mm");
+            var arrival = journey.Journey.Arrival.ToString("HH:mm");
+            var originName = journey.OriginLocation ?? "Origin";
+            var destinationName = journey.DestinationLocation ?? "Destination";
+            var price = journey.Journey.InternetPrice.ToString("0.00") + " " + journey.Journey.Currency;
+            var company = journey.BusCompany?.Name;
+
+            <div class="journey-card">
+                <div class="journey-top">
+                    <div class="time-info">
+                        <span>Departure</span> @departure
+                        <span class="arrow">→</span>
+                        <span>Arrival</span> @arrival
+                    </div>
+                    <div class="price-tag">@price</div>
+                </div>
+                <div class="location">@originName – @destinationName</div>
+                @if (!string.IsNullOrWhiteSpace(company))
+                {
+                    <div class="bus-company">@company</div>
+                }
+            </div>
+        }
+    </div>
+</body>
+</html>
